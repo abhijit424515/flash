@@ -1,0 +1,4 @@
+GET a
+SET a 1
+GET a
+SET a 2

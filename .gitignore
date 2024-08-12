@@ -1,0 +1,6 @@
+parse.*
+scan.*
+client
+*.o
+core
+.vscode/
