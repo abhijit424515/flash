@@ -7,9 +7,12 @@
 enum struct ValueType {
 	OK,
 	NIL,
+	INT,
 	STR,
 	LIST,
 };
+
+bool is_number(const string& s);
 
 struct Value {
 	ValueType t;
@@ -31,13 +34,28 @@ struct Nil: Value {
 	}
 };
 
+struct Int: Value {
+	Int(string x) {
+		t = ValueType::INT;
+		v = (void*) new ll(stoll(x));
+	}
+	ll modify(ll x) {
+		ll *t = (ll*)v;
+		*t += x;
+		return *t;
+	}
+	void print() override {
+		cout << "(integer) " << *((ll*)v);
+	}
+};
+
 struct String: Value {
 	String(string x) {
 		t = ValueType::STR;
 		v = (void*) new string(x);
 	}
 	void print() override {
-		cout << *((string*)v);
+		cout << '\"' << *((string*)v) << '\"';
 	}
 };
 
@@ -53,11 +71,11 @@ struct List: Value {
 		auto z = (vector<Value*>*)v;
 
 		for (int i=0; i<z->size()-1; i++) {
-			cout << '(' << i+1 << ") ";
+			cout << i+1 << ") ";
 			(*z)[i]->print();
 			cout << endl;
 		}
-		cout << '(' << z->size() << ") ";
+		cout << z->size() << ") ";
 		(*z)[z->size()-1]->print();
 	}
 };

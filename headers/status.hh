@@ -19,7 +19,10 @@ struct Result {
 	Value *x;
 	Result(Value *x): x(x) {}
 };
-struct Error {};
+struct Error {
+	string msg;
+	Error(string msg = ""): msg(msg) {}
+};
 
 using Status = variant<Result,Error>;
 

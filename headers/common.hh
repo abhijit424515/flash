@@ -17,4 +17,6 @@
 #include <unistd.h>
 using namespace std;
 
+#define ll long long
+
 #endif

@@ -18,6 +18,11 @@ set							[Ss][Ee][Tt]
 mget						[Mm][Gg][Ee][Tt]
 mset						[Mm][Ss][Ee][Tt]
 
+incr						[Ii][Nn][Cc][Rr]
+incrby						[Ii][Nn][Cc][Rr][Bb][Yy]
+decr						[Dd][Ee][Cc][Rr]
+decrby						[Dd][Ee][Cc][Rr][Bb][Yy]
+
 %%
 
 \n							{ return NEWLINE; }
@@ -40,6 +45,11 @@ KEEPTTL						{ return KEEPTTL; }
 {set}						{ return SET; }
 {mget}						{ return MGET; }
 {mset}						{ return MSET; }
+
+{incr}						{ return INCR; }
+{incrby}					{ return INCRBY; }
+{decr}						{ return DECR; }
+{decrby}					{ return DECRBY; }
 
 ({unquoted}|{quoted})		{ yylval.name = new string(yytext); return NAME; }
 

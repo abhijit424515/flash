@@ -5,7 +5,7 @@
 #include "value.hh"
 #include "status.hh"
 
-extern unordered_map<string,string> db;
+extern unordered_map<string,Value*> db;
 
 // --------------------------------
 
@@ -21,7 +21,7 @@ struct Get: Cmd {
 		auto z = db.find(*key);
 		if (z == db.end()) 
 			return Result{new Nil{}};
-		return Result{new String(z->second)};
+		return Result{z->second};
 	}
 	~Get() {
 		delete key;
@@ -33,7 +33,11 @@ struct Set: Cmd {
 
 	Set(string *k, string *v): key(k), value(v) {}
 	Status code() override {
-		db[*key] = *value;
+		bool z = is_number(*value);
+		Value *v;
+		if (z) v = new Int(*value);
+		else v = new String(*value);
+		db[*key] = v;
 		return Result{new Ok{}};
 	}
 	~Set() {
@@ -54,7 +58,7 @@ struct Mget: Cmd {
 				values->push_back(new Nil{});
 				continue;
 			}
-			values->push_back(new String(z->second));
+			values->push_back(z->second);
 		}
 		
 		return Result{values};
@@ -69,12 +73,44 @@ struct Mset: Cmd {
 
 	Mset(KVWrapper *kvw): kvw(kvw) {}
 	Status code() override {
-		for (auto z: kvw->kvs) 
-			db[*(z->kv->first)] = *(z->kv->second);
+		for (auto z: kvw->kvs) {
+			string *key = z->kv->first, *value = z->kv->second;
+			bool t = is_number(*value);
+			Value *v;
+			if (t) v = new Int(*value);
+			else v = new String(*value);
+			db[*key] = v;
+		}
 		return Result{new Ok{}};
 	}
 	~Mset() {
 		delete kvw;
+	}
+};
+
+// --------------------------------
+
+struct ModifyInt: Cmd {
+	string *key, *inc;
+	bool neg;
+
+	ModifyInt(string *k, string *inc, bool neg=0): key(k), inc(inc), neg(neg) {}
+	Status code() override {
+		auto z = db.find(*key);
+		if (z == db.end())
+			return Result{db[*key] = new Int("1")};
+		if (z->second->t != ValueType::INT)
+			return Error{"value is not an integer"};
+		if (!is_number(*inc))
+			return Error{"modification is not an integer"};
+
+		Int *x = (Int*)z->second;
+		x->modify((neg ? -1 : 1)*stoll(*inc));
+		return Result{x};
+	}
+	~ModifyInt() {
+		delete key;
+		delete inc;
 	}
 };
 
