@@ -1,4 +1,8 @@
+#ifndef STATUS_HH
+#define STATUS_HH
+
 #include "common.hh"
+#include "value.hh"
 
 template<class... Ts>
 struct overload : Ts... {
@@ -11,19 +15,28 @@ overload(Ts...) -> overload<Ts...>;
 
 // --------------------------------
 
-struct Ok {};
-struct Value { 
-	string x;
-	Value(string x): x(x) {}
+struct Result {
+	Value *x;
+	Result(Value *x): x(x) {}
 };
-struct Nil {};
 struct Error {};
 
-using Status = variant<Ok,Value,Nil,Error>;
+using Status = variant<Result,Error>;
 
 using visitor_type = overload<
-    function<string(const Ok&)>,
-    function<string(const Value&)>,
-    function<string(const Nil&)>,
-    function<string(const Error&)>
+    function<void(const Result&)>,
+    function<void(const Error&)>
 >;
+
+extern visitor_type visitor;
+
+// --------------------------------
+
+template <typename T>
+void process(T* x) {
+	visit(visitor, x->code());
+	cout << endl;
+	delete x;
+}
+
+#endif

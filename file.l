@@ -15,6 +15,8 @@ quoted						\"[^\"\\\r\n]*(\\.[^\"\\\r\n]*)*\"
 
 get							[Gg][Ee][Tt]
 set							[Ss][Ee][Tt]
+mget						[Mm][Gg][Ee][Tt]
+mset						[Mm][Ss][Ee][Tt]
 
 %%
 
@@ -36,6 +38,8 @@ KEEPTTL						{ return KEEPTTL; }
 
 {get}						{ return GET; }
 {set}						{ return SET; }
+{mget}						{ return MGET; }
+{mset}						{ return MSET; }
 
 ({unquoted}|{quoted})		{ yylval.name = new string(yytext); return NAME; }
 
