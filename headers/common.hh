@@ -6,6 +6,8 @@
 #include <fcntl.h>
 #include <memory>
 #include <mqueue.h>
+#include <mutex>
+#include <shared_mutex>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
