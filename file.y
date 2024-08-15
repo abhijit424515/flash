@@ -1,32 +1,26 @@
 %{
 	#include "file.cc"
-    extern "C" void yyerror(const char *s);
+    extern "C" void yyerror(const char *s) {
+		fprintf(stderr, "(syntax error)\n");
+	}
     extern int yylex(void);
 %}
 
 %union{
 	string *name;
-	Get* g;
-	Set *s;
-	Mget* mg;
-	Mset *ms;
+	Cmd *cmd;
 	KeyWrapper *kw;
 	KV *kvp;
 	KVWrapper *kvw;
-	ModifyInt *mi;
 }
 
-%token NEWLINE SEC MSEC USEC UMSEC EX PX EXAT PXAT NX XX KEEPTTL GET SET MGET MSET INCR INCRBY DECR DECRBY NAME
+%token NAME NEWLINE SEC MSEC USEC UMSEC EX PX EXAT PXAT NX XX KEEPTTL GET SET MGET MSET INCR INCRBY DECR DECRBY SADD SREM SISMEMBER SINTER SCARD
 
 %type <name> NAME
 %type <kw> key_list
 %type <kvp> kv
 %type <kvw> kv_list
-%type <g> get
-%type <s> set
-%type <mg> mget
-%type <ms> mset
-%type <mi> incr incrby decr decrby
+%type <cmd> get set mget mset incr incrby decr decrby sadd srem sismember sinter scard
 %start program
 %%
 
@@ -41,20 +35,26 @@ req_list
 ;
 
 req
-	:	get								{ process<Get>($1); }
-	|	set								{ process<Set>($1); }
-	|	mget							{ process<Mget>($1); }
-	|	mset							{ process<Mset>($1); }
-	|	incr							{ process<ModifyInt>($1); }
-	|	incrby							{ process<ModifyInt>($1); }
-	|	decr							{ process<ModifyInt>($1); }
-	|	decrby							{ process<ModifyInt>($1); }
+	:	error NEWLINE       			{ yyerrok; }
+	|	get								{ process($1); }
+	|	set								{ process($1); }
+	|	mget							{ process($1); }
+	|	mset							{ process($1); }
+	|	incr							{ process($1); }
+	|	incrby							{ process($1); }
+	|	decr							{ process($1); }
+	|	decrby							{ process($1); }
 	// |	lpush							{ process<LPush>($1); }
 	// |	lpop							{ process<LPop>($1); }
 	// |	llen							{ process<LLen>($1); }
 	// |	lmove							{ process<LMove>($1); }
 	// |	lrange							{ process<LRange>($1); }
 	// |	ltrim							{ process<LTrim>($1); }
+	|	sadd							{ process($1); }
+	|	srem							{ process($1); }
+	|	sismember						{ process($1); }
+	|	sinter							{ process($1); }
+	|	scard							{ process($1); }
 	|	NEWLINE							{}
 ;
 
@@ -119,6 +119,28 @@ decrby
 // ltrim
 // 	:	LTRIM NAME NAME NAME NEWLINE	{ $$ = new LTrim($2,$3,$4); }
 // ;
+
+// --------------------------------
+
+sadd
+	:	SADD NAME key_list NEWLINE			{ $$ = new SAdd($2,$3); }
+;
+
+srem
+	:	SREM NAME key_list NEWLINE			{ $$ = new SRem($2,$3); }
+;
+
+sismember
+	:	SISMEMBER NAME NAME NEWLINE		{ $$ = new SIsMember($2,$3); }
+;
+
+sinter
+	:	SINTER key_list NEWLINE			{ $$ = new SInter($2); }
+;
+
+scard
+	:	SCARD NAME NEWLINE				{ $$ = new SCard($2); }
+;
 
 // --------------------------------
 

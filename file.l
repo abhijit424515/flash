@@ -23,6 +23,12 @@ incrby						[Ii][Nn][Cc][Rr][Bb][Yy]
 decr						[Dd][Ee][Cc][Rr]
 decrby						[Dd][Ee][Cc][Rr][Bb][Yy]
 
+sadd						[Ss][Aa][Dd][Dd]
+srem						[Ss][Rr][Ee][Mm]
+sismember					[Ss][Ii][Ss][Mm][Ee][Mm][Bb][Ee][Rr]
+sinter						[Ss][Ii][Nn][Tt][Ee][Rr]
+scard						[Ss][Cc][Aa][Rr][Dd]
+
 %%
 
 \n							{ return NEWLINE; }
@@ -50,6 +56,12 @@ KEEPTTL						{ return KEEPTTL; }
 {incrby}					{ return INCRBY; }
 {decr}						{ return DECR; }
 {decrby}					{ return DECRBY; }
+
+{sadd}						{ return SADD; }
+{srem}						{ return SREM; }
+{sismember}					{ return SISMEMBER; }
+{sinter}					{ return SINTER; }
+{scard}						{ return SCARD; }
 
 ({unquoted}|{quoted})		{ yylval.name = new string(yytext); return NAME; }
 
