@@ -12,15 +12,17 @@
 	KeyWrapper *kw;
 	KV *kvp;
 	KVWrapper *kvw;
+	bool b;
 }
 
-%token NAME NEWLINE SEC MSEC USEC UMSEC EX PX EXAT PXAT NX XX KEEPTTL GET SET MGET MSET INCR INCRBY DECR DECRBY SADD SREM SISMEMBER SINTER SCARD
+%token NAME NEWLINE SEC MSEC USEC UMSEC EX PX EXAT PXAT NX XX KEEPTTL LEFT RIGHT CLEAR GET SET DEL MGET MSET INCR INCRBY DECR DECRBY LPUSH RPUSH LPOP RPOP LLEN LMOVE LRANGE LTRIM SADD SREM SISMEMBER SINTER SCARD
 
+%type <b> dir
 %type <name> NAME
 %type <kw> key_list
 %type <kvp> kv
 %type <kvw> kv_list
-%type <cmd> get set mget mset incr incrby decr decrby sadd srem sismember sinter scard
+%type <cmd> get set del mget mset incr incrby decr decrby lpush rpush lpop rpop llen lmove lrange ltrim sadd srem sismember sinter scard
 %start program
 %%
 
@@ -36,20 +38,24 @@ req_list
 
 req
 	:	error NEWLINE       			{ yyerrok; }
+	|	CLEAR NEWLINE					{ clear(); }
 	|	get								{ process($1); }
 	|	set								{ process($1); }
+	|	del								{ process($1); }
 	|	mget							{ process($1); }
 	|	mset							{ process($1); }
 	|	incr							{ process($1); }
 	|	incrby							{ process($1); }
 	|	decr							{ process($1); }
 	|	decrby							{ process($1); }
-	// |	lpush							{ process<LPush>($1); }
-	// |	lpop							{ process<LPop>($1); }
-	// |	llen							{ process<LLen>($1); }
-	// |	lmove							{ process<LMove>($1); }
-	// |	lrange							{ process<LRange>($1); }
-	// |	ltrim							{ process<LTrim>($1); }
+	|	lpush							{ process($1); }
+	|	rpush							{ process($1); }
+	|	lpop							{ process($1); }
+	|	rpop							{ process($1); }
+	|	llen							{ process($1); }
+	|	lmove							{ process($1); }
+	|	lrange							{ process($1); }
+	|	ltrim							{ process($1); }
 	|	sadd							{ process($1); }
 	|	srem							{ process($1); }
 	|	sismember						{ process($1); }
@@ -66,6 +72,10 @@ get
 
 set
 	:	SET NAME NAME nx_xx opt_get exp keepttl NEWLINE		{ $$ = new Set($2,$3); }
+;
+
+del
+	:	DEL key_list NEWLINE			{ $$ = new Del($2); }
 ;
 
 mget
@@ -96,38 +106,48 @@ decrby
 
 // --------------------------------
 
-// lpush
-// 	:	LPUSH NAME NAME NEWLINE			{ $$ = new LPush($2,$3); }
-// ;
+lpush
+	:	LPUSH NAME key_list NEWLINE		{ $$ = new LPush($2,$3); }
+;
 
-// lpop
-// 	:	LPOP NAME NEWLINE				{ $$ = new LPop($2); }
-// ;
+rpush
+	:	RPUSH NAME key_list NEWLINE		{ $$ = new RPush($2,$3); }
+;
 
-// llen
-// 	:	LLEN NAME NEWLINE				{ $$ = new LLen($2); }
-// ;
+lpop
+	:	LPOP NAME NAME NEWLINE			{ $$ = new LPop($2,$3); }
+	|	LPOP NAME NEWLINE				{ $$ = new LPop($2, new string("1")); }
+;
 
-// lmove
-// 	:	LMOVE NAME NAME NAME NEWLINE	{ $$ = new LMove($2,$3,$4); }
-// ;
+rpop
+	:	RPOP NAME NAME NEWLINE			{ $$ = new RPop($2,$3); }
+	|	RPOP NAME NEWLINE				{ $$ = new RPop($2, new string("1")); }
+;
 
-// lrange
-// 	:	LRANGE NAME NAME NAME NEWLINE	{ $$ = new LRange($2,$3,$4); }
-// ;
+llen
+	:	LLEN NAME NEWLINE				{ $$ = new LLen($2); }
+;
 
-// ltrim
-// 	:	LTRIM NAME NAME NAME NEWLINE	{ $$ = new LTrim($2,$3,$4); }
-// ;
+lmove
+	:	LMOVE NAME NAME dir dir NEWLINE	{ $$ = new LMove($2,$3,$4,$5); }
+;
+
+lrange
+	:	LRANGE NAME NAME NAME NEWLINE	{ $$ = new LRange($2,$3,$4); }
+;
+
+ltrim
+	:	LTRIM NAME NAME NAME NEWLINE	{ $$ = new LTrim($2,$3,$4); }
+;
 
 // --------------------------------
 
 sadd
-	:	SADD NAME key_list NEWLINE			{ $$ = new SAdd($2,$3); }
+	:	SADD NAME key_list NEWLINE		{ $$ = new SAdd($2,$3); }
 ;
 
 srem
-	:	SREM NAME key_list NEWLINE			{ $$ = new SRem($2,$3); }
+	:	SREM NAME key_list NEWLINE		{ $$ = new SRem($2,$3); }
 ;
 
 sismember
@@ -143,6 +163,11 @@ scard
 ;
 
 // --------------------------------
+
+dir
+	:	LEFT							{ $$ = 0; }
+	|	RIGHT							{ $$ = 1; }
+;
 
 key_list
 	:	key_list NAME					{ $1->push_back($2); $$ = $1; }

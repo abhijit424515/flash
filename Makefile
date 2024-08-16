@@ -33,4 +33,5 @@ parse.tab.c parse.tab.h : $(PARSE)
 clean :
 	rm -f *.o *.output
 	rm -f $(TGT) 
+	rm -rf .vscode/ core
 	rm -rf parse.tab.c parse.tab.h scan.c 

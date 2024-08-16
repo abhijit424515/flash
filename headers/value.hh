@@ -89,6 +89,22 @@ struct List: Value {
 		t = ValueType::LIST;
 		v = new type();
 	}
+	ll size() {
+		auto z = (type*)v;
+		return z->size();
+	}
+	bool empty() {
+		auto z = (type*)v;
+		return z->empty();
+	}
+	Value* back() {
+		auto z = (type*)v;
+		return z->back();
+	}
+	Value* front() {
+		auto z = (type*)v;
+		return z->front();
+	}
 	ll push_back(Value* x) {
 		auto z = (type*)v;
 		z->push_back(x);
@@ -111,17 +127,25 @@ struct List: Value {
 		z->pop_front();
 		return x;
 	}
+	Value* operator[](ll i) {
+		auto z = (type*)v;
+		return (*z)[i];
+	}
 
 	void print() override {
 		auto z = (type*)v;
-
-		for (int i=0; i<z->size()-1; i++) {
-			cout << i+1 << ") ";
-			(*z)[i]->print();
-			cout << endl;
+		if (z->size() == 0) {
+			cout << "(empty)";
+			return;
 		}
-		cout << z->size() << ") ";
-		(*z)[z->size()-1]->print();
+
+		int i = 1;
+		for (auto it = z->begin(); it != z->end(); ++it) {
+			cout << i++ << ") ";
+			(*it)->print();
+			if (std::next(it) != z->end())
+				cout << endl;
+		}
 	}
 	bool equals(const Value* other) const override {
 		if (other->t != ValueType::LIST) 
@@ -175,6 +199,10 @@ struct UnorderedSet: Value {
 	}
 	void print() override {
 		auto z = (type*)v;
+		if (z->size() == 0) {
+			cout << "(empty)";
+			return;
+		}
 
 		int i = 1;
 		for (auto it = z->begin(); it != z->end(); ++it) {
