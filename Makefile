@@ -3,14 +3,14 @@ FNAME = file
 CPP = g++
 BISON = bison
 FLEX = flex
-TGT = client
+TGT = flash
 
 SCAN = $(FNAME).l
 PARSE = $(FNAME).y
 HEADERS = $(FNAME).hh
 
 OBJ = scan.o parse.tab.o
-CFLAGS = -g
+CFLAGS = -g -lpthread
 
 $(TGT): $(OBJ)
 	$(CPP) --std=c++17  $(OBJ) -o $(TGT) -ly 

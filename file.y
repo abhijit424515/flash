@@ -4,6 +4,7 @@
 		fprintf(stderr, "(syntax error)\n");
 	}
     extern int yylex(void);
+	extern void yyrestart(FILE *input_file);
 %}
 
 %union{
@@ -22,144 +23,147 @@
 %type <kw> key_list
 %type <kvp> kv
 %type <kvw> kv_list
-%type <cmd> get set del mget mset incr incrby decr decrby lpush rpush lpop rpop llen lmove lrange ltrim sadd srem sismember sinter scard
+%type <cmd> command get set del mget mset incr incrby decr decrby lpush rpush lpop rpop llen lmove lrange ltrim sadd srem sismember sinter scard
 %start program
 %%
 
 program
 	:	req_list						{}
-	|	%empty							{}
 ;
 
 req_list
-	:	req req_list					{}
+	:	req_list NEWLINE req			{}
 	|	req								{}
 ;
 
 req
-	:	error NEWLINE       			{ yyerrok; }
-	|	CLEAR NEWLINE					{ clear(); }
-	|	get								{ process($1); }
-	|	set								{ process($1); }
-	|	del								{ process($1); }
-	|	mget							{ process($1); }
-	|	mset							{ process($1); }
-	|	incr							{ process($1); }
-	|	incrby							{ process($1); }
-	|	decr							{ process($1); }
-	|	decrby							{ process($1); }
-	|	lpush							{ process($1); }
-	|	rpush							{ process($1); }
-	|	lpop							{ process($1); }
-	|	rpop							{ process($1); }
-	|	llen							{ process($1); }
-	|	lmove							{ process($1); }
-	|	lrange							{ process($1); }
-	|	ltrim							{ process($1); }
-	|	sadd							{ process($1); }
-	|	srem							{ process($1); }
-	|	sismember						{ process($1); }
-	|	sinter							{ process($1); }
-	|	scard							{ process($1); }
-	|	NEWLINE							{}
+	:	error			       			{ yyerrok; }
+	|	CLEAR							{ clear(); }
+	|	%empty							{}
+	|	command 						{ process($1); }
+;
+
+command
+	:	get								{}
+	|	set								{}
+	|	del								{}
+	|	mget							{}
+	|	mset							{}
+	|	incr							{}
+	|	incrby							{}
+	|	decr							{}
+	|	decrby							{}
+	|	lpush							{}
+	|	rpush							{}
+	|	lpop							{}
+	|	rpop							{}
+	|	llen							{}
+	|	lmove							{}
+	|	lrange							{}
+	|	ltrim							{}
+	|	sadd							{}
+	|	srem							{}
+	|	sismember						{}
+	|	sinter							{}
+	|	scard							{}
 ;
 
 // --------------------------------
 
 get
-	:	GET NAME NEWLINE				{ $$ = new Get($2); }
+	:	GET NAME						{ $$ = new Get($2); }
 ;
 
 set
-	:	SET NAME NAME nx_xx opt_get exp keepttl NEWLINE		{ $$ = new Set($2,$3); }
+	:	SET NAME NAME nx_xx opt_get exp keepttl		{ $$ = new Set($2,$3); }
 ;
 
 del
-	:	DEL key_list NEWLINE			{ $$ = new Del($2); }
+	:	DEL key_list					{ $$ = new Del($2); }
 ;
 
 mget
-	:	MGET key_list NEWLINE			{ $$ = new Mget($2); }
+	:	MGET key_list					{ $$ = new Mget($2); }
 ;
 
 mset
-	:	MSET kv_list NEWLINE			{ $$ = new Mset($2); }
+	:	MSET kv_list					{ $$ = new Mset($2); }
 ;
 
 // --------------------------------
 
 incr
-	:	INCR NAME NEWLINE				{ $$ = new ModifyInt($2, new string("1")); }
+	:	INCR NAME						{ $$ = new ModifyInt($2, new string("1")); }
 ;
 
 incrby
-	:	INCRBY NAME NAME NEWLINE		{ $$ = new ModifyInt($2,$3); }
+	:	INCRBY NAME NAME				{ $$ = new ModifyInt($2,$3); }
 ;
 
 decr
-	:	DECR NAME NEWLINE				{ $$ = new ModifyInt($2, new string("-1")); }
+	:	DECR NAME						{ $$ = new ModifyInt($2, new string("-1")); }
 ;
 
 decrby
-	:	DECRBY NAME NAME NEWLINE		{ $$ = new ModifyInt($2,$3,1); }
+	:	DECRBY NAME NAME				{ $$ = new ModifyInt($2,$3,1); }
 ;
 
 // --------------------------------
 
 lpush
-	:	LPUSH NAME key_list NEWLINE		{ $$ = new LPush($2,$3); }
+	:	LPUSH NAME key_list				{ $$ = new LPush($2,$3); }
 ;
 
 rpush
-	:	RPUSH NAME key_list NEWLINE		{ $$ = new RPush($2,$3); }
+	:	RPUSH NAME key_list				{ $$ = new RPush($2,$3); }
 ;
 
 lpop
-	:	LPOP NAME NAME NEWLINE			{ $$ = new LPop($2,$3); }
-	|	LPOP NAME NEWLINE				{ $$ = new LPop($2, new string("1")); }
+	:	LPOP NAME NAME					{ $$ = new LPop($2,$3); }
+	|	LPOP NAME						{ $$ = new LPop($2, new string("1")); }
 ;
 
 rpop
-	:	RPOP NAME NAME NEWLINE			{ $$ = new RPop($2,$3); }
-	|	RPOP NAME NEWLINE				{ $$ = new RPop($2, new string("1")); }
+	:	RPOP NAME NAME					{ $$ = new RPop($2,$3); }
+	|	RPOP NAME						{ $$ = new RPop($2, new string("1")); }
 ;
 
 llen
-	:	LLEN NAME NEWLINE				{ $$ = new LLen($2); }
+	:	LLEN NAME						{ $$ = new LLen($2); }
 ;
 
 lmove
-	:	LMOVE NAME NAME dir dir NEWLINE	{ $$ = new LMove($2,$3,$4,$5); }
+	:	LMOVE NAME NAME dir dir			{ $$ = new LMove($2,$3,$4,$5); }
 ;
 
 lrange
-	:	LRANGE NAME NAME NAME NEWLINE	{ $$ = new LRange($2,$3,$4); }
+	:	LRANGE NAME NAME NAME			{ $$ = new LRange($2,$3,$4); }
 ;
 
 ltrim
-	:	LTRIM NAME NAME NAME NEWLINE	{ $$ = new LTrim($2,$3,$4); }
+	:	LTRIM NAME NAME NAME			{ $$ = new LTrim($2,$3,$4); }
 ;
 
 // --------------------------------
 
 sadd
-	:	SADD NAME key_list NEWLINE		{ $$ = new SAdd($2,$3); }
+	:	SADD NAME key_list 				{ $$ = new SAdd($2,$3); }
 ;
 
 srem
-	:	SREM NAME key_list NEWLINE		{ $$ = new SRem($2,$3); }
+	:	SREM NAME key_list				{ $$ = new SRem($2,$3); }
 ;
 
 sismember
-	:	SISMEMBER NAME NAME NEWLINE		{ $$ = new SIsMember($2,$3); }
+	:	SISMEMBER NAME NAME				{ $$ = new SIsMember($2,$3); }
 ;
 
 sinter
-	:	SINTER key_list NEWLINE			{ $$ = new SInter($2); }
+	:	SINTER key_list					{ $$ = new SInter($2); }
 ;
 
 scard
-	:	SCARD NAME NEWLINE				{ $$ = new SCard($2); }
+	:	SCARD NAME						{ $$ = new SCard($2); }
 ;
 
 // --------------------------------
@@ -210,5 +214,7 @@ keepttl
 %%
 
 int main() {
+	std::thread init_thread(init);
+
 	yyparse();
 }

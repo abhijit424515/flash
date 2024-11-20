@@ -1,6 +1,8 @@
 parse.*
 scan.*
-client
-*.o
+flash
+**/client
+**/server
+**/*.o
 core
 .vscode/

@@ -2,3 +2,5 @@
 #include "headers/cmd.hh"
 #include "headers/wrapper.hh"
 #include "headers/status.hh"
+
+#define BACKUP "flash.backup"

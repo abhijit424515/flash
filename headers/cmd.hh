@@ -11,6 +11,7 @@ extern unordered_map<string,Value*> db;
 
 struct Cmd {
     virtual Status code() = 0;
+    virtual string serialize() = 0;
 };
 
 struct Get: Cmd {
@@ -22,6 +23,9 @@ struct Get: Cmd {
 		if (z == db.end()) 
 			return Result{new Nil{}};
 		return Result{z->second};
+	}
+	string serialize() override {
+		return "get " + *key;
 	}
 	~Get() {
 		delete key;
@@ -39,6 +43,9 @@ struct Set: Cmd {
 		else v = new String(*value);
 		db[*key] = v;
 		return Result{new Ok{}};
+	}
+	string serialize() override {
+		return "set " + *key + " " + *value;
 	}
 	~Set() {
 		delete key;
@@ -60,6 +67,12 @@ struct Del: Cmd {
 			x->modify(1);
 		}
 		return Result{x};
+	}
+	string serialize() override {
+		string ret = "del";
+		for (auto k: kw->keys)
+			ret += " " + *k;
+		return ret;
 	}
 	~Del() {
 		delete kw;
@@ -83,6 +96,12 @@ struct Mget: Cmd {
 		
 		return Result{values};
 	}
+	string serialize() override {
+		string ret = "mget";
+		for (auto k: kw->keys)
+			ret += " " + *k;
+		return ret;
+	}
 	~Mget() {
 		delete kw;
 	}
@@ -102,6 +121,12 @@ struct Mset: Cmd {
 			db[*key] = v;
 		}
 		return Result{new Ok{}};
+	}
+	string serialize() override {
+		string ret = "mset";
+		for (auto z: kvw->kvs)
+			ret += " " + *(z->kv->first) + " " + *(z->kv->second);
+		return ret;
 	}
 	~Mset() {
 		delete kvw;
@@ -127,6 +152,9 @@ struct ModifyInt: Cmd {
 		Int *x = (Int*)z->second;
 		x->modify((neg ? -1 : 1)*stoll(*inc));
 		return Result{x};
+	}
+	string serialize() override {
+		return "modify " + *key + " " + *inc;
 	}
 	~ModifyInt() {
 		delete key;
@@ -161,6 +189,12 @@ struct LPush: Cmd {
 		}
 		return Result{x};
 	}
+	string serialize() override {
+		string ret = "lpush " + *key;
+		for (auto v: values->keys)
+			ret += " " + *v;
+		return ret;
+	}
 	~LPush() {
 		delete key;
 		delete values;
@@ -190,6 +224,12 @@ struct RPush: Cmd {
 			x->modify(1);
 		}
 		return Result{x};
+	}
+	string serialize() override {
+		string ret = "rpush " + *key;
+		for (auto v: values->keys)
+			ret += " " + *v;
+		return ret;
 	}
 	~RPush() {
 		delete key;
@@ -227,6 +267,9 @@ struct LPop: Cmd {
 		}
 		return Result{ret};
 	}
+	string serialize() override {
+		return "lpop " + *key + " " + *count;
+	}
 	~LPop() {
 		delete key;
 	}
@@ -258,6 +301,9 @@ struct RPop: Cmd {
 
 		return Result{ret};
 	}
+	string serialize() override {
+		return "rpop " + *key + " " + *count;
+	}
 	~RPop() {
 		delete key;
 	}
@@ -275,6 +321,9 @@ struct LLen: Cmd {
 			return Error{"value is not a list"};
 		List *l = (List*)(z->second);
 		return Result{new Int(l->size())};
+	}
+	string serialize() override {
+		return "llen " + *key;
 	}
 	~LLen() {
 		delete key;
@@ -320,6 +369,13 @@ struct LMove: Cmd {
 		else m->push_back(ret);
 		return Result{ret};
 	}
+	string serialize() override {
+		return "lmove " + *src + " " + *dest + " " + (sl ? "left" : "right") + " " + (dl ? "left" : "right");
+	}
+	~LMove() {
+		delete src;
+		delete dest;
+	}
 };
 
 struct LRange: Cmd {
@@ -352,6 +408,9 @@ struct LRange: Cmd {
 		for (ll i=s; i<=e; i++)
 			ret->push_back((*l)[i]);
 		return Result{ret};
+	}
+	string serialize() override {
+		return "lrange " + *key + " " + *start + " " + *end;
 	}
 	~LRange() {
 		delete key;
@@ -392,6 +451,9 @@ struct LTrim: Cmd {
 		db[*key] = ret;
 		return Result{new Ok{}};
 	}
+	string serialize() override {
+		return "ltrim " + *key + " " + *start + " " + *end;
+	}
 	~LTrim() {
 		delete key;
 		delete start;
@@ -425,6 +487,12 @@ struct SAdd: Cmd {
 		}
 		return Result{x};
 	}
+	string serialize() override {
+		string ret = "sadd " + *key;
+		for (auto m: members->keys)
+			ret += " " + *m;
+		return ret;
+	}
 	~SAdd() {
 		delete key;
 		delete members;
@@ -455,6 +523,12 @@ struct SRem: Cmd {
 		}
 		return Result{x};
 	}
+	string serialize() override {
+		string ret = "srem " + *key;
+		for (auto m: members->keys)
+			ret += " " + *m;
+		return ret;
+	}
 	~SRem() {
 		delete key;
 		delete members;
@@ -478,6 +552,9 @@ struct SIsMember: Cmd {
 		}
 		bool t = s->is_member(is_number(*member) ? (Value*) new Int{*member} : (Value*) new String{*member});
 		return Result{new Int((ll)t)};
+	}
+	string serialize() override {
+		return "sismember " + *key + " " + *member;
 	}
 	~SIsMember() {
 		delete key;
@@ -518,6 +595,12 @@ struct SInter: Cmd {
 		}
 		return Result{s};
 	}
+	string serialize() override {
+		string ret = "sinter";
+		for (auto k: keys->keys)
+			ret += " " + *k;
+		return ret;
+	}
 	~SInter() {
 		delete keys;
 	}
@@ -535,6 +618,9 @@ struct SCard: Cmd {
 			return Error{"value is not a set"};
 		auto s = (unordered_set<Value*>*)((UnorderedSet*)(z->second)->v);
 		return Result{new Int(s->size())};
+	}
+	string serialize() override {
+		return "scard " + *key;
 	}
 	~SCard() {
 		delete key;

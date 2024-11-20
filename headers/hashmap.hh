@@ -33,7 +33,7 @@ public:
         return map_.at(key);
     }
 
-    void remove(const Key& key) {
+    void erase(const Key& key) {
         std::unique_lock<std::shared_mutex> map_lock(map_mutex_);
         auto it = mutexes_.find(key);
         if (it == mutexes_.end()) {

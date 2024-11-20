@@ -4,7 +4,7 @@
 
 ```bash
 docker run -d --name pic-soc alpine:latest tail -f /dev/null
-docker exec pic-soc /bin/sh -c "apk update && apk add --no-cache bison flex gcc g++ make git libc-dev"
+docker exec pic-soc /bin/sh -c "apk update && apk add --no-cache bison flex gcc g++ make git libc-dev argp-standalone"
 ```
 
 This will install the required dependencies, and start the container.
